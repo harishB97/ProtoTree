@@ -1,0 +1,19 @@
+start load env and run python
+Resetting modules to system default. Reseting $MODULEPATH back to system default. All extra directories will be removed from $MODULEPATH.
+Resetting modules to system default. Reseting $MODULEPATH back to system default. All extra directories will be removed from $MODULEPATH.
+/cm/local/apps/slurm/var/spool/job1130686/slurm_script: line 17: activate: No such file or directory
+/home/harishbabu/.conda/envs/taming3/bin/python
+Traceback (most recent call last):
+  File "main_tree.py", line 5, in <module>
+    from util.data import get_dataloaders
+  File "/home/harishbabu/projects/ProtoTree/util/data.py", line 8, in <module>
+    import torchvision
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torchvision/__init__.py", line 7, in <module>
+    from torchvision import datasets
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torchvision/datasets/__init__.py", line 1, in <module>
+    from .lsun import LSUN, LSUNClass
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torchvision/datasets/lsun.py", line 2, in <module>
+    from PIL import Image
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/PIL/Image.py", line 100, in <module>
+    from . import _imaging as core
+ImportError: /lib64/libstdc++.so.6: version `CXXABI_1.3.9' not found (required by /home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/PIL/../../.././libLerc.so)
