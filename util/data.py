@@ -22,9 +22,35 @@ def get_data(args: argparse.Namespace):
                 - a tuple containing the shape (depth, width, height) of the input images
     """
     if args.dataset =='CUB-200-2011':
-        return get_birds(True, './data/CUB_200_2011/dataset/train_corners', './data/CUB_200_2011/dataset/train_crop', './data/CUB_200_2011/dataset/test_full')
+        return get_birds(True, '/fastscratch/harishbabu/data/CUB_200_2011/dataset/train_corners',
+                                '/fastscratch/harishbabu/data/CUB_200_2011/dataset/train_crop',
+                                 '/fastscratch/harishbabu/data/CUB_200_2011/dataset/test_full')
     if args.dataset == 'CARS':
         return get_cars(True, './data/cars/dataset/train', './data/cars/dataset/train', './data/cars/dataset/test')
+    if args.dataset == 'FISH-224':
+        return get_fish(True, '/home/harishbabu/data/Fish/phylo-VQVAE/train_padded_256', '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_256', 
+                                '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_256')
+    if args.dataset == 'FISH-256':
+        return get_fish(True, '/home/harishbabu/data/Fish/phylo-VQVAE/train_padded_256', '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_256', 
+                                '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_256', 256)
+    if args.dataset == 'FISH-256-aug':
+        return get_fish(True, '/home/harishbabu/data/Fish/phylo-VQVAE/train_padded_256', '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_256', 
+                                '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_256', 256)
+    if args.dataset == 'FISH-512':
+        return get_fish(True, '/home/harishbabu/data/Fish/phylo-VQVAE/train_padded_512', '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_512', 
+                                '/home/harishbabu/data/Fish/phylo-VQVAE/test_padded_512', 512)
+    if args.dataset == 'CUB-224-imgnetmean':
+        return get_cub_imgnetmean(True, '/fastscratch/harishbabu/data/CUB_190_pt/dataset_imgnet_pt_bb_crop/train_segmented_imagenet_background_corners',
+                                '/fastscratch/harishbabu/data/CUB_190_pt/dataset_imgnet_pt_bb_crop/train_segmented_imagenet_background_crop', 
+                                '/fastscratch/harishbabu/data/CUB_190_pt/dataset_imgnet_pt_bb_crop/test_segmented_imagenet_background_full', 224)
+    if args.dataset == 'CUB-subset1-224-imgnetmean':
+        return get_cub_imgnetmean(True, '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_train',
+                                '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_train', 
+                                '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_test', 224)
+    if args.dataset =='CUB-190-2011':
+        return get_birds(True, '/fastscratch/mridul/cub_190_split_resized/official/CUB_200_2011/train',
+                                '/fastscratch/mridul/cub_190_split_resized/official/CUB_200_2011/train',
+                                '/fastscratch/mridul/cub_190_split_resized/official/CUB_200_2011/test', 224)
     raise Exception(f'Could not load data set "{args.dataset}"!')
 
 def get_dataloaders(args: argparse.Namespace):
@@ -58,7 +84,43 @@ def get_dataloaders(args: argparse.Namespace):
 
 def get_birds(augment: bool, train_dir:str, project_dir: str, test_dir:str, img_size = 224): 
     shape = (3, img_size, img_size)
-    mean = (0.485, 0.456, 0.406)
+    mean = (0.485, 0.456, 0.406) # imagenet mean and std
+    std = (0.229, 0.224, 0.225)
+    normalize = transforms.Normalize(mean=mean,std=std)
+    transform_no_augment = transforms.Compose([
+                            transforms.Resize(size=(img_size, img_size)),
+                            transforms.ToTensor(),
+                            normalize
+                        ])
+    if augment:
+        transform = transforms.Compose([
+            transforms.Resize(size=(img_size, img_size)),
+            transforms.RandomOrder([
+            transforms.RandomPerspective(distortion_scale=0.2, p = 0.5),
+            transforms.ColorJitter((0.6,1.4), (0.6,1.4), (0.6,1.4), (-0.02,0.02)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomAffine(degrees=10, shear=(-2,2),translate=[0.05,0.05]),
+            ]),
+            transforms.ToTensor(),
+            normalize,
+        ])
+    else:
+        transform = transform_no_augment
+
+    trainset = torchvision.datasets.ImageFolder(train_dir, transform=transform)
+    projectset = torchvision.datasets.ImageFolder(project_dir, transform=transform_no_augment)
+    testset = torchvision.datasets.ImageFolder(test_dir, transform=transform_no_augment)
+    classes = trainset.classes
+    for i in range(len(classes)):
+        classes[i]=classes[i].split('.')[1]
+    return trainset, projectset, testset, classes, shape
+
+
+def get_cub_imgnetmean(augment: bool, train_dir:str, project_dir: str, test_dir:str, img_size = 224): 
+    shape = (3, img_size, img_size)
+    # mean = (0.4699, 0.4381, 0.3879) # calculated using all the train images with imgnet background and bb crop
+    # std = (0.1360, 0.1292, 0.1311)
+    mean = (0.485, 0.456, 0.406) # imagenet mean and std
     std = (0.229, 0.224, 0.225)
     normalize = transforms.Normalize(mean=mean,std=std)
     transform_no_augment = transforms.Compose([
@@ -92,7 +154,7 @@ def get_birds(augment: bool, train_dir:str, project_dir: str, test_dir:str, img_
 
 def get_cars(augment: bool, train_dir:str, project_dir: str, test_dir:str, img_size = 224): 
     shape = (3, img_size, img_size)
-    mean = (0.485, 0.456, 0.406)
+    mean = (0.485, 0.456, 0.406) # imagenet mean and std
     std = (0.229, 0.224, 0.225)
 
     normalize = transforms.Normalize(mean=mean,std=std)
@@ -125,4 +187,38 @@ def get_cars(augment: bool, train_dir:str, project_dir: str, test_dir:str, img_s
     
     return trainset, projectset, testset, classes, shape
 
+
+def get_fish(augment: bool, train_dir:str, project_dir: str, test_dir:str, img_size = 224): 
+    shape = (3, img_size, img_size)
+    mean = (0.485, 0.456, 0.406) # imagenet mean and std
+    std = (0.229, 0.224, 0.225)
+    normalize = transforms.Normalize(mean=mean,std=std)
+    transform_no_augment = transforms.Compose([
+                            transforms.Resize(size=(img_size, img_size)),
+                            transforms.ToTensor(),
+                            normalize
+                        ])
+    if augment:
+        transform = transforms.Compose([
+            transforms.Resize(size=(img_size, img_size)),
+            transforms.RandomOrder([
+            transforms.RandomPerspective(distortion_scale=0.2, p = 0.5),
+            transforms.ColorJitter((0.6,1.4), (0.6,1.4), (0.6,1.4), (-0.02,0.02)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomAffine(degrees=10, shear=(-2,2),translate=[0.05,0.05]),
+            ]),
+            transforms.ToTensor(),
+            normalize,
+        ])
+    else:
+        transform = transform_no_augment
+
+    trainset = torchvision.datasets.ImageFolder(train_dir, transform=transform)
+    projectset = torchvision.datasets.ImageFolder(project_dir, transform=transform_no_augment)
+    testset = torchvision.datasets.ImageFolder(test_dir, transform=transform_no_augment)
+    classes = trainset.classes
+    print(classes)
+    # for i in range(len(classes)):
+    #     classes[i]=classes[i].split('.')[1]
+    return trainset, projectset, testset, classes, shape
 
