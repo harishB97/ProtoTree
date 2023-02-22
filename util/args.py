@@ -137,6 +137,10 @@ def get_args() -> argparse.Namespace:
                         type=int,
                         default=5,
                         help='Number of ProtoTrees to train and (optionally) use in an ensemble. Used in main_ensemble.py') 
+    # parser.add_argument('--gpus',
+    #                     type=str,
+    #                     default='0,',
+    #                     help='Number of gpus to use') 
     args = parser.parse_args()
     args.milestones = get_milestones(args)
     return args
