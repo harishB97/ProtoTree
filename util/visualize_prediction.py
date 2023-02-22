@@ -72,7 +72,7 @@ def upsample_local(tree: ProtoTree,
                                             interpolation=cv2.INTER_CUBIC)
         plt.imsave(fname=os.path.join(dir,'%s_masked_upsampled_heatmap.png'%str(decision_node_idx)), arr=upsampled_prototype_pattern, vmin=0.0,vmax=1.0) 
             
-        high_act_patch_indices = find_high_activation_crop(upsampled_prototype_pattern, args.upsample_threshold)
+        high_act_patch_indices, _ = find_high_activation_crop(upsampled_prototype_pattern, args.upsample_threshold)
         high_act_patch = x_np[high_act_patch_indices[0]:high_act_patch_indices[1],
                                             high_act_patch_indices[2]:high_act_patch_indices[3], :]
         plt.imsave(fname=os.path.join(dir,'%s_nearest_patch_of_image.png'%str(decision_node_idx)), arr=high_act_patch, vmin=0.0,vmax=1.0)
