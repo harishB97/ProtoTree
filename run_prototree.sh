@@ -3,7 +3,7 @@
 #SBATCH --account=mabrownlab
 #SBATCH --partition=dgx_normal_q
 #SBATCH --time=1-00:00:00 
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:3
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=8
 #SBATCH -o ./SLURM/slurm-%j.out
 
@@ -18,7 +18,19 @@ source activate taming3
 which python
 
 
-python main_tree.py --epochs 100 --log_dir ./runs/004-cub_200_224-dth=9-ep=100 --dataset CUB-200-2011 --lr 0.001 --lr_block 0.001 --lr_net 1e-5 --num_features 256 --depth 9 --net resnet50_inat --freeze_epochs 30 --milestones 60,70,80,90,100
+python main_tree.py --epochs 100 \
+                    --log_dir ./runs/010-cub_190_imgnet_224-dth=9-ep=100 \
+                    --dataset CUB-224-imgnetmean \
+                    --lr 0.001 \
+                    --lr_block 0.001 \
+                    --lr_net 1e-5 \
+                    --num_features 256 \
+                    --depth 9 \
+                    --net resnet50_inat \
+                    --freeze_epochs 30 \
+                    --milestones 60,70,80,90,100 \
+                    --gpus 0,1,2 #\
+                    # --state_dict_dir_net '/home/harishbabu/projects/ProtoTree/runs/005-cub_190_imgnet_224-dth=9-ep=100/checkpoints/latest/'
 
 exit;
 
