@@ -1,0 +1,21 @@
+start load env and run python
+Resetting modules to system default
+Resetting modules to system default
+/cm/local/apps/slurm/var/spool/job1139519/slurm_script: line 17: activate: No such file or directory
+/home/harishbabu/.conda/envs/taming3/bin/python
+Log dir:  ./runs/006-CUB-subset_1-224-imgnet-dth=4-ep=100
+Num classes (k) =  2
+Traceback (most recent call last):
+  File "main_tree.py", line 168, in <module>
+    run_tree(args)
+  File "main_tree.py", line 60, in run_tree
+    tree, epoch = init_tree(tree, optimizer, scheduler, device, args)
+  File "/home/harishbabu/projects/ProtoTree/util/init.py", line 59, in init_tree
+    tree._net.load_state_dict(torch.load(args.state_dict_dir_net+'/model_state.pth'), strict=False)
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torch/serialization.py", line 581, in load
+    with _open_file_like(f, 'rb') as opened_file:
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torch/serialization.py", line 230, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torch/serialization.py", line 211, in __init__
+    super(_open_file, self).__init__(open(name, mode))
+NotADirectoryError: [Errno 20] Not a directory: '/home/harishbabu/projects/ProtoTree/runs/005-cub_190_imgnet_224-dth=9-ep=100/checkpoints/latest/model_state.pth/model_state.pth'

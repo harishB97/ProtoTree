@@ -18,6 +18,8 @@ import torch
 from shutil import copy
 from copy import deepcopy
 
+# breakpoint()
+
 def run_tree(args=None):
     args = args or get_args()
     # Create a logger
@@ -28,8 +30,8 @@ def run_tree(args=None):
     # Log the run arguments
     save_args(args, log.metadata_dir)
     if not args.disable_cuda and torch.cuda.is_available():
-        # device = torch.device('cuda')
-        device = torch.device('cuda:{}'.format(torch.cuda.current_device()))
+        device = torch.device('cuda')
+        # device = torch.device('cuda:{}'.format(torch.cuda.current_device()))
     else:
         device = torch.device('cpu')
         
@@ -50,7 +52,11 @@ def run_tree(args=None):
                     feature_net = features_net,
                     args = args,
                     add_on_layers = add_on_layers)
+
     tree = tree.to(device=device)
+    # tree = torch.nn.parallel.DistributedDataParallel(tree, device_ids=[int(device_id) for device_id in args.gpus.strip(',').split(',')])
+    # tree = torch.nn.DataParallel(tree, device_ids=[int(device_id) for device_id in args.gpus.strip(',').split(',')])
+
     # Determine which optimizer should be used to update the tree parameters
     optimizer, params_to_freeze, params_to_train = get_optimizer(tree, args)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer, milestones=args.milestones, gamma=args.gamma)

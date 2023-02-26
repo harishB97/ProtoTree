@@ -1,0 +1,17 @@
+start load env and run python
+Resetting modules to system default
+Resetting modules to system default
+/cm/local/apps/slurm/var/spool/job1140480/slurm_script: line 17: activate: No such file or directory
+/home/harishbabu/.conda/envs/taming3/bin/python
+Log dir:  ./runs/010-cub_190_imgnet_224-dth=9-ep=100
+Num classes (k) =  190
+Traceback (most recent call last):
+  File "main_tree.py", line 169, in <module>
+    run_tree(args)
+  File "main_tree.py", line 59, in run_tree
+    optimizer, params_to_freeze, params_to_train = get_optimizer(tree, args)
+  File "/home/harishbabu/projects/ProtoTree/util/args.py", line 216, in get_optimizer
+    for name,param in tree._net.named_parameters():
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 778, in __getattr__
+    raise ModuleAttributeError("'{}' object has no attribute '{}'".format(
+torch.nn.modules.module.ModuleAttributeError: 'DataParallel' object has no attribute '_net'

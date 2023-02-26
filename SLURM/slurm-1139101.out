@@ -1,0 +1,17 @@
+start load env and run python
+Resetting modules to system default
+Resetting modules to system default
+/cm/local/apps/slurm/var/spool/job1139101/slurm_script: line 17: activate: No such file or directory
+/home/harishbabu/.conda/envs/taming3/bin/python
+Log dir:  ./runs/005-cub_190_imgnet_224-dth=9-ep=100
+Num classes (k) =  190
+Traceback (most recent call last):
+  File "main_tree.py", line 168, in <module>
+    run_tree(args)
+  File "main_tree.py", line 55, in run_tree
+    tree = torch.nn.parallel.DistributedDataParallel(tree, device_ids=[int(device_id) for device_id in args.gpus.strip(',').split(',')])
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 379, in __init__
+    self.process_group = _get_default_group()
+  File "/home/harishbabu/.conda/envs/taming3/lib/python3.8/site-packages/torch/distributed/distributed_c10d.py", line 286, in _get_default_group
+    raise RuntimeError("Default process group has not been initialized, "
+RuntimeError: Default process group has not been initialized, please make sure to call init_process_group.
