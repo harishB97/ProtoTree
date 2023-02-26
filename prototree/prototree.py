@@ -340,4 +340,14 @@ class ProtoTree(nn.Module):
             path = [node] + path
         return path
 
+    def get_common_parent(self, node1, node2):
+        path_to_node1 = self.path_to(node1)
+        path_to_node2 = self.path_to(node2)
+
+        i = 0
+        while path_to_node1[i] == path_to_node2[i]:
+            common_parent = path_to_node1[i]
+
+        return common_parent
+
 
