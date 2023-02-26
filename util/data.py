@@ -43,10 +43,14 @@ def get_data(args: argparse.Namespace):
         return get_cub_imgnetmean(True, '/fastscratch/harishbabu/data/CUB_190_pt/dataset_imgnet_pt_bb_crop/train_segmented_imagenet_background_corners',
                                 '/fastscratch/harishbabu/data/CUB_190_pt/dataset_imgnet_pt_bb_crop/train_segmented_imagenet_background_crop', 
                                 '/fastscratch/harishbabu/data/CUB_190_pt/dataset_imgnet_pt_bb_crop/test_segmented_imagenet_background_full', 224)
-    if args.dataset == 'CUB-subset1-224-imgnetmean':
-        return get_cub_imgnetmean(True, '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_train',
-                                '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_train', 
-                                '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_test', 224)
+    # if args.dataset == 'CUB-subset1-224-imgnetmean':
+    #     return get_cub_imgnetmean(True, '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_train',
+    #                             '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_train', 
+    #                             '/fastscratch/harishbabu/data/CUB_bb_crop/cub_subset1_test', 224)
+    if args.dataset == 'CUB-subset_1-224-imgnetmean':
+        return get_cub_imgnetmean(True, '/fastscratch/harishbabu/data/CUB_subset_1/train_corners',
+                                '/fastscratch/harishbabu/data/CUB_subset_1/train_crop', 
+                                '/fastscratch/harishbabu/data/CUB_subset_1/test_full', 224)
     if args.dataset =='CUB-190-2011':
         return get_birds(True, '/fastscratch/mridul/cub_190_split_resized/official/CUB_200_2011/train',
                                 '/fastscratch/mridul/cub_190_split_resized/official/CUB_200_2011/train',
@@ -147,8 +151,8 @@ def get_cub_imgnetmean(augment: bool, train_dir:str, project_dir: str, test_dir:
     projectset = torchvision.datasets.ImageFolder(project_dir, transform=transform_no_augment)
     testset = torchvision.datasets.ImageFolder(test_dir, transform=transform_no_augment)
     classes = trainset.classes
-    for i in range(len(classes)):
-        classes[i]=classes[i].split('.')[1]
+    # for i in range(len(classes)):
+    #     classes[i]=classes[i].split('.')[1]
     return trainset, projectset, testset, classes, shape
 
 
