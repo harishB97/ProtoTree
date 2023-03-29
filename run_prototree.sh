@@ -2,8 +2,8 @@
 
 #SBATCH --account=mabrownlab
 #SBATCH --partition=dgx_normal_q
-#SBATCH --time=1-00:00:00 
-#SBATCH --gres=gpu:3
+#SBATCH --time=0-00:30:00 
+#SBATCH --gres=gpu:1
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=8
 #SBATCH -o ./SLURM/slurm-%j.out
 
@@ -18,19 +18,23 @@ source activate taming3
 which python
 
 
-python main_tree.py --epochs 100 \
-                    --log_dir ./runs/010-cub_190_imgnet_224-dth=9-ep=100 \
-                    --dataset CUB-224-imgnetmean \
+python main_tree.py --epochs 1 \
+                    --log_dir ./runs/trial003 \
+                    --dataset CUB-subset_1-224-imgnetmean \
                     --lr 0.001 \
                     --lr_block 0.001 \
                     --lr_net 1e-5 \
                     --num_features 256 \
-                    --depth 9 \
+                    --depth 4 \
                     --net resnet50_inat \
                     --freeze_epochs 30 \
                     --milestones 60,70,80,90,100 \
                     --gpus 0,1,2 #\
                     # --state_dict_dir_net '/home/harishbabu/projects/ProtoTree/runs/005-cub_190_imgnet_224-dth=9-ep=100/checkpoints/latest/'
+
+# python view_path.py
+
+# python main_explain_local.py --log_dir ./runs/010-cub_190_imgnet_224-dth=9-ep=100 --dataset CUB-224-imgnetmean --sample_dir /fastscratch/harishbabu/data/CUB_190_pt/dataset_imgnet_pt_bb_crop/local_testing/ --prototree ./runs/010-cub_190_imgnet_224-dth=9-ep=100/checkpoints/pruned_and_projected
 
 exit;
 

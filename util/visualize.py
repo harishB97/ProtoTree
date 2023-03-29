@@ -7,6 +7,7 @@ from subprocess import check_call
 from PIL import Image
 import torch
 import math
+import glob
 from prototree.prototree import ProtoTree
 from prototree.branch import Branch
 from prototree.leaf import Leaf
@@ -74,13 +75,18 @@ def _leaf_vis(node: Leaf):
         img=img.resize((100,height))
     return img
 
+def get_file_from_pattern(pattern):
+    return glob.glob(pattern)[0]
 
 def _branch_vis(node: Branch, upsample_dir: str):
     branch_id = node.index
     
-    img = Image.open(os.path.join(upsample_dir, '%s_nearest_patch_of_image.png'%branch_id))
-    bb = Image.open(os.path.join(upsample_dir, '%s_bounding_box_nearest_patch_of_image.png'%branch_id))
-    map = Image.open(os.path.join(upsample_dir, '%s_heatmap_original_image.png'%branch_id))
+    # img = Image.open(get_file_from_pattern('*%s_nearest_patch_of_image.png'%branch_id))
+    # bb = Image.open(get_file_from_pattern('*%s_bounding_box_nearest_patch_of_image.png'%branch_id))
+    # map = Image.open(get_file_from_pattern('*%s_heatmap_original_image.png'%branch_id))
+    img = Image.open(get_file_from_pattern(os.path.join(upsample_dir, '%s_nearest_patch_of_image.png'%branch_id)))
+    bb = Image.open(get_file_from_pattern(os.path.join(upsample_dir, '%s_bounding_box_nearest_patch_of_image.png'%branch_id)))
+    map = Image.open(get_file_from_pattern(os.path.join(upsample_dir, '*%s_heatmap_original_image.png'%branch_id)))
     w, h = img.size
     wbb, hbb = bb.size
     
@@ -112,7 +118,7 @@ def _branch_vis(node: Branch, upsample_dir: str):
     return together
 
 
-def _gen_dot_nodes(node: Node, destination_folder: str, upsample_dir: str, classes:tuple):
+def _gen_dot_nodes(node: Node, destination_folder: str, upsample_dir: str, classes:tuple, node_suffix=''):
     img = _node_vis(node, upsample_dir).convert('RGB')
     if isinstance(node, Leaf):
         if node._log_probabilities:
@@ -130,25 +136,45 @@ def _gen_dot_nodes(node: Node, destination_folder: str, upsample_dir: str, class
     filename = '{}/node_vis/node_{}_vis.jpg'.format(destination_folder, node.index)
     img.save(filename)
     if isinstance(node, Leaf):
-        s = '{}[imagepos="tc" imagescale=height image="{}" label="{}" labelloc=b fontsize=10 penwidth=0 fontname=Helvetica];\n'.format(node.index, filename, str_targets)
+        s = '{}[imagepos="tc" imagescale=height image="{}" label="{}" labelloc=b fontsize=10 penwidth=0 fontname=Helvetica];\n'.format(str(node.index)+node_suffix, filename, str_targets)
     else:
-        s = '{}[image="{}" xlabel="{}" fontsize=6 labelfontcolor=gray50 fontname=Helvetica];\n'.format(node.index, filename, node.index)
+        s = '{}[image="{}" xlabel="{}" fontsize=6 labelfontcolor=gray50 fontname=Helvetica];\n'.format(str(node.index)+node_suffix, filename, node.index)
     if isinstance(node, Branch):
-        return s\
-               + _gen_dot_nodes(node.l, destination_folder, upsample_dir, classes)\
-               + _gen_dot_nodes(node.r, destination_folder, upsample_dir, classes)
+        if node.l:
+            s += _gen_dot_nodes(node.l, destination_folder, upsample_dir, classes, node_suffix)
+        if node.r:
+            s += _gen_dot_nodes(node.r, destination_folder, upsample_dir, classes, node_suffix)
+        return s
+    
     if isinstance(node, Leaf):
         return s
 
 
-def _gen_dot_edges(node: Node, classes:tuple):
+def _gen_dot_edges(node: Node, classes:tuple, node_suffix=''):
     if isinstance(node, Branch):
-        edge_l, targets_l = _gen_dot_edges(node.l, classes)
-        edge_r, targets_r = _gen_dot_edges(node.r, classes)
+        edge_l, targets_l = _gen_dot_edges(node.l, classes, node_suffix)
+        edge_r, targets_r = _gen_dot_edges(node.r, classes, node_suffix)
         str_targets_l = ','.join(str(t) for t in targets_l) if len(targets_l) > 0 else ""
         str_targets_r = ','.join(str(t) for t in targets_r) if len(targets_r) > 0 else ""
-        s = '{} -> {} [label="Absent" fontsize=10 tailport="s" headport="n" fontname=Helvetica];\n {} -> {} [label="Present" fontsize=10 tailport="s" headport="n" fontname=Helvetica];\n'.format(node.index, node.l.index, 
-                                                                       node.index, node.r.index)
+        s = ''
+        # if node.l:
+        #     s += '{} -> {} [label="Absent" fontsize=10 tailport="e" headport="w" fontname=Helvetica];\n'.format(str(node.index)+node_suffix,
+        #                                                                                                        str(node.l.index)+node_suffix)
+        # if node.r:
+        #     # if s != '':
+        #     #     s += '\n'
+        #     s += '{} -> {} [label="Present" fontsize=10 tailport="e" headport="w" fontname=Helvetica];\n'.format(str(node.index)+node_suffix,
+        #                                                                                                           str(node.r.index)+node_suffix)
+
+        if node.l:
+            s += '{} -> {} [label="Absent" fontsize=10 fontname=Helvetica];\n'.format(str(node.index)+node_suffix,
+                                                                                                               str(node.l.index)+node_suffix)
+        if node.r:
+            # if s != '':
+            #     s += '\n'
+            s += '{} -> {} [label="Present" fontsize=10 fontname=Helvetica];\n'.format(str(node.index)+node_suffix,
+                                                                                                                  str(node.r.index)+node_suffix)
+
         return s + edge_l + edge_r, sorted(list(set(targets_l + targets_r)))
     if isinstance(node, Leaf):
         if node._log_probabilities:
@@ -162,4 +188,6 @@ def _gen_dot_edges(node: Node, classes:tuple):
             t = targets[i]
             class_targets[i] = classes[t]
         return '', class_targets
+    
+    return '', []
 

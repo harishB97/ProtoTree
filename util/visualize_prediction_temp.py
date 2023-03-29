@@ -1,3 +1,4 @@
+# Contains minor modifications on util.visualize_prediction.py, should be merged with original later
 
 import os
 import cv2
@@ -22,12 +23,13 @@ from prototree.node import Node
 def upsample_local(tree: ProtoTree,
                  sample: torch.Tensor,
                  sample_dir: str,
-                 folder_name: str,
-                 img_name: str,
                  decision_path: list,
                  args: argparse.Namespace):
     
-    dir = os.path.join(os.path.join(os.path.join(args.log_dir, folder_name),img_name), args.dir_for_saving_images)
+    # dir = os.path.join(os.path.join(os.path.join(args.log_dir, folder_name),img_name), 'upsampling_results')
+    img_name = sample_dir.split('/')[-1].split(".")[-2]
+    dir =   os.path.join(args.log_dir, 'dump', img_name)
+    
     if not os.path.exists(dir):
         os.makedirs(dir)
     with torch.no_grad():
@@ -84,6 +86,8 @@ def upsample_local(tree: ProtoTree,
                             bbox_height_end=high_act_patch_indices[1],
                             bbox_width_start=high_act_patch_indices[2],
                             bbox_width_end=high_act_patch_indices[3], color=(0, 255, 255))
+
+        return dir
 
 def gen_pred_vis(tree: ProtoTree,
                  sample: torch.Tensor,

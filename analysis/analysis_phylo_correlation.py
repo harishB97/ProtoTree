@@ -18,7 +18,7 @@ from prototree.prototree import ProtoTree
 from prototree.branch import Branch
 from prototree.leaf import Leaf
 from prototree.node import Node
-from util.visualize import _gen_dot_edges, _gen_dot_nodes, gen_vis
+from util.visualize import _gen_dot_edges, _gen_dot_nodes
 import copy
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -32,7 +32,7 @@ import seaborn as sns
 from ete3 import Tree
 
 # from prototree import ProtoTree
-args = load_args('/home/harishbabu/projects/ProtoTree/runs/004-cub_200_224-dth=9-ep=100/metadata')
+args = load_args('/home/harishbabu/projects/ProtoTree/runs/010-cub_190_imgnet_224-dth=9-ep=100/metadata')
 
 # node_image_path = os.path.join(log_dir, 'pruned_and_projected/node_vis')
 
@@ -323,9 +323,7 @@ def plot_heatmap(data, destination_folder, filename, colorbar=True):
     fig.savefig(os.path.join(destination_folder, filename),bbox_inches='tight',dpi=300)
 
 
-def plot_singlelink_distance_between_species(tree, folder_name, filename, args, classes, phylo_filepath=None):
-    trainset, projectset, testset, classes, shape = get_data(args)
-
+def plot_singlelink_distance_between_species(tree, folder_name, args, classes):
     destination_folder=os.path.join(args.log_dir,folder_name)
     nodes_count = 2**(args.depth+1)-1
 
@@ -340,66 +338,55 @@ def plot_singlelink_distance_between_species(tree, folder_name, filename, args, 
         path = tree.path_to(leaf)[:-1] # excluding leaf node
         decision_vector = leaf_id_to_decision_vector[leaf.index]
         for node in path:
-            if node.r in path: # node involved in positive reasoning (prototype absence)
+            if node.r in path:
                 decision_vector[node.index] = 1
-            elif node.l in path: # node involved in negative reasoning (prototype presence)
+            elif node.l in path:
                 decision_vector[node.index] = -1
+    
+    heatmap = np.zeros((len(classes), len(classes)))
+    class_ids = list(class_id_to_leaf.keys())
+    for i in range(len(class_ids)):
+        for j in range(i+1, len(class_ids)):
+            class_id_1, class_id_2 = class_ids[i], class_ids[j]
+            vector_set1 = [leaf_id_to_decision_vector[leaf.index] for leaf in class_id_to_leaf[class_id_1]]
+            vector_set2 = [leaf_id_to_decision_vector[leaf.index] for leaf in class_id_to_leaf[class_id_2]]
+            distance = singlelink_distance_between_vectors(vector_set1, vector_set2)
+            heatmap[class_id_1][class_id_2] = heatmap[class_id_2][class_id_1] = distance
 
-    if phylo_filepath:
-        # keeping the order of classes in the heatmap to be the same order as the phylogenetic tree
-        tree = Tree(phylo_filepath, format=1)
-        leaves = tree.get_leaves()
-        leaf_names = [node.name for node in leaves]
+    # fig = plt.figure()
+    # ax = sns.heatmap(heatmap, yticklabels=False, xticklabels=False)#.set(title='heatmap of '+title)
+    # ax.tick_params(left=False, bottom=False) 
+    # cbar = ax.collections[0].colorbar
+    # cbar.ax.tick_params(labelsize=15)
+    # plt.show()
+    # fig.savefig(os.path.join(destination_folder, 'prototree_species_distances.png'),bbox_inches='tight',dpi=300)
 
-        idx_to_class = {idx:classname for classname, idx in trainset.class_to_idx.items()}
-        heatmap_df = pd.DataFrame(np.zeros((len(leaf_names), len(leaf_names))), index=leaf_names, columns=leaf_names)
-        class_ids = list(class_id_to_leaf.keys())
-        for i in range(len(class_ids)):
-            for j in range(i+1, len(class_ids)):
-                class_id_1, class_id_2 = class_ids[i], class_ids[j]
-                vector_set1 = [leaf_id_to_decision_vector[leaf.index] for leaf in class_id_to_leaf[class_id_1]]
-                vector_set2 = [leaf_id_to_decision_vector[leaf.index] for leaf in class_id_to_leaf[class_id_2]]
-                distance = singlelink_distance_between_vectors(vector_set1, vector_set2)
-                heatmap_df[idx_to_class[class_id_1]][idx_to_class[class_id_2]] = heatmap_df[idx_to_class[class_id_2]][idx_to_class[class_id_1]] = distance
-        heatmap_np = heatmap_df.to_numpy()
-    else:
-        # keeping the order of classes in the heatmap in just sorted order
-        heatmap_np = np.zeros((len(classes), len(classes)))
-        class_ids = list(class_id_to_leaf.keys())
-        for i in range(len(class_ids)):
-            for j in range(i+1, len(class_ids)):
-                class_id_1, class_id_2 = class_ids[i], class_ids[j]
-                vector_set1 = [leaf_id_to_decision_vector[leaf.index] for leaf in class_id_to_leaf[class_id_1]]
-                vector_set2 = [leaf_id_to_decision_vector[leaf.index] for leaf in class_id_to_leaf[class_id_2]]
-                distance = singlelink_distance_between_vectors(vector_set1, vector_set2)
-                heatmap_np[class_id_1][class_id_2] = heatmap_np[class_id_2][class_id_1] = distance
+    plot_heatmap(heatmap, destination_folder, filename='prototree_species_distances.png', colorbar=True)
 
-    plot_heatmap(heatmap_np, destination_folder, filename=filename+'.png', colorbar=True)
-    pd.DataFrame(heatmap_np).to_csv(os.path.join(destination_folder, filename+'.csv'))
+    pd.DataFrame(heatmap).to_csv(os.path.join(destination_folder, 'prototree_species_distances.csv'))
 
 
-def plot_phylodistance(phylo_filepath, destination_folder, filename):
+def plot_phylodistance(phylo_filepath, destination_folder):
     tree = Tree(phylo_filepath, format=1)
     leaves = tree.get_leaves()
-
-    # leaf_names = sorted([node.name for node in leaves])
-    # leaves = [leaf for leaf, _ in sorted(zip(leaves, leaf_names), key=lambda x: x[1])] # sort leaves based on leaf_name
-
-    leaf_names = [node.name for node in leaves]
-
+    leaf_names = sorted([node.name for node in leaves])
+    leaves = [leaf for leaf, _ in sorted(zip(leaves, leaf_names), key=lambda x: x[1])] # sort leaves based on leaf_name
     phyl_dist_df = pd.DataFrame(np.zeros((len(leaf_names), len(leaf_names))), index=leaf_names, columns=leaf_names)
     for i in range(len(leaf_names)):
         for j in range(i+1, len(leaf_names)):
             phyl_dist = tree.get_distance(target=leaf_names[i], target2=leaf_names[j], topology_only=False)
-            phyl_dist_df.loc[leaf_names[i], leaf_names[j]] = phyl_dist
+            phyl_dist_df.loc[leaf_names[i].name, leaf_names[j].name] = phyl_dist
+            
             phyl_dist = tree.get_distance(target=leaf_names[j], target2=leaf_names[i], topology_only=False)
-            phyl_dist_df.loc[leaf_names[j], leaf_names[i]] = phyl_dist
+            phyl_dist_df.loc[leaf_names[j].name, leaf_names[i].name] = phyl_dist
 
     phyl_dist_np = phyl_dist_df.to_numpy()
 
-    plot_heatmap(phyl_dist_np, destination_folder, filename+'.png', colorbar=True)
-    phyl_dist_df.to_csv(os.path.join(destination_folder, filename+'.csv'))
+    plot_heatmap(phyl_dist_np, destination_folder, filename='phylogenetic_species_distances.png', colorbar=True)
 
+    phyl_dist_df.to_csv(os.path.join(destination_folder, 'phylogenetic_species_distances.csv'))
+
+    
 
 # visualize_each_path(tree, 'pruned_and_projected', args, classes)
 
@@ -407,45 +394,10 @@ def plot_phylodistance(phylo_filepath, destination_folder, filename):
 
 # visualize_each_path_with_input(tree, 'pruned_and_projected', args, classes)
 
-# plot_singlelink_distance_between_species(tree, 'pruned_and_projected', 'prototree_species_distances_phylosorted', args, classes,
-#                                          phylo_filepath="analysis/phylo_trees/1_tree-consensus-Hacket-AllSpecies-cub-names.phy")
+plot_singlelink_distance_between_species(tree, 'pruned_and_projected', args, classes)
 
-# plot_singlelink_distance_between_species(tree, 'pruned_and_projected', 'prototree_species_distances', args, classes,
-#                                          phylo_filepath=None)
-
-# plot_phylodistance(phylo_filepath="analysis/phylo_trees/1_tree-consensus-Hacket-AllSpecies-cub-names.phy",
-#                    destination_folder="analysis/phylo_trees",
-#                    filename='phylogenetic_species_distances_cub_phylosorted')
-
-# plot_phylodistance(phylo_filepath="/home/harishbabu/data/Fish/phylo-VQVAE/cleaned_metadata.tre",
-#                    destination_folder="analysis/phylo_trees",
-#                    filename='phylogenetic_species_distances_fish')
-
-def gen_vis_subtree(tree: ProtoTree, subtree_root_index: int, folder_name: str, args: argparse.Namespace, classes:tuple):
-
-    subtree_root = tree.nodes_by_index[subtree_root_index]
-    destination_folder=os.path.join(args.log_dir,folder_name)
-    upsample_dir = os.path.join(os.path.join(args.log_dir, args.dir_for_saving_images), folder_name)
-    if not os.path.isdir(destination_folder):
-        os.mkdir(destination_folder)
-    if not os.path.isdir(destination_folder + '/node_vis'):
-        os.mkdir(destination_folder + '/node_vis')
-
-    with torch.no_grad():
-        s = 'digraph T {margin=0;ranksep=".03";nodesep="0.05";splines="false";\n'
-        s += 'node [shape=rect, label=""];\n'
-        s += _gen_dot_nodes(subtree_root, destination_folder, upsample_dir, classes)
-        s += _gen_dot_edges(subtree_root, classes)[0]
-        s += '}\n'
-
-    with open(os.path.join(destination_folder,'subtree_root_{}_vis.dot'.format(subtree_root_index)), 'w') as f:
-        f.write(s)
-   
-    from_p = os.path.join(destination_folder,'subtree_root_{}_vis.dot'.format(subtree_root_index))
-    to_pdf = os.path.join(destination_folder,'subtree_root_{}_vis.pdf'.format(subtree_root_index))
-    check_call('dot -Tpdf -Gmargin=0 %s -o %s'%(from_p, to_pdf), shell=True)
-
-gen_vis_subtree(tree, 291, 'pruned_and_projected', args, classes)
+plot_phylodistance(phylo_filepath="analysis/1_tree-consensus-Hacket-AllSpecies.phy",
+                   destination_folder="pruned_and_projected")
 
 # upsample_local(tree: ProtoTree,
 #                  sample: torch.Tensor,
